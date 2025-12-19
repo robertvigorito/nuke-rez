@@ -6,14 +6,14 @@ version = "16.0v1"
 authors = ["Foundry"]
 description = "Foundry Nuke compositing application"
 
-requires = ["python-3.9"]
+# requires = ["python-3.9"]
 
-variants = [["platform-linux"]]
+build_command = False  # No build step
 
 
 def commands():
     # Root install path
-    env.NUKE_ROOT = f"/vfx/wgid/programs/Nuke{version}"
+    NUKE_ROOT = f"/vfx/wgid/programs/Nuke{version}"
 
     # Main binaries
     env.PATH.prepend("{NUKE_ROOT}")
@@ -29,7 +29,8 @@ def commands():
     env.NUKE_PATH.append("/studio/nuke/plugins")
     env.NUKE_PATH.append("/studio/nuke/gizmos")
 
+    slim_version = version.split("v")[0]
     # Convenience aliases
-    alias("nuke", "{NUKE_ROOT}/Nuke14.0")
-    alias("nukex", "{NUKE_ROOT}/Nuke14.0 --nukex")
-    alias("nukei", "{NUKE_ROOT}/Nuke14.0 --nukei")
+    alias("nuke", f"{NUKE_ROOT}/Nuke{slim_version}.exe")
+    alias("nukex", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukex")
+    alias("nukei", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukei")

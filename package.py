@@ -1,7 +1,7 @@
 """The Nuke rez package, nothing special, just a wrapper around settings the environment to use Nuke in Rez."""
 
 name = "nuke"
-version = "16.0v1"
+version = "15.1v1"
 authors = ["Foundry"]
 description = "Foundry Nuke compositing application"
 
@@ -16,7 +16,7 @@ def commands():
     Returns:
         The fucntion does not return anything, it modifies the environment in place.
     """
-    slim_version = "16.0"
+    slim_version = "15.1"
     NUKE_ROOT = f"/vfx/wgid/programs/Nuke{version}"
 
     # Convenience aliases

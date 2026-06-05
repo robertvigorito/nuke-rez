@@ -16,7 +16,7 @@ def commands():
     Returns:
         The fucntion does not return anything, it modifies the environment in place.
     """
-    slim_version = "15.1"
+    slim_version = "17.0"
     NUKE_ROOT = f"/vfx/wgid/programs/Nuke{version}"
 
     # Convenience aliases

@@ -1,7 +1,7 @@
 """The Nuke rez package, nothing special, just a wrapper around settings the environment to use Nuke in Rez."""
 
 name = "nuke"
-version = "15.1v1"
+version = "17.0v1"
 authors = ["Foundry"]
 description = "Foundry Nuke compositing application"
 
@@ -23,3 +23,5 @@ def commands():
     alias("nuke", f"{NUKE_ROOT}/Nuke{slim_version}.exe")
     alias("nukex", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukex")
     alias("nukei", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukei")
+    # Nukestudio alias could be added here if needed in the future
+    alias("nukestudio", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukestudio")

@@ -31,6 +31,7 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
     launcher = textwrap.dedent(
         """
         import os
+        import re
         import subprocess
         import sys
 
@@ -46,15 +47,21 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
                 value = value.replace(character, "^" + character)
             return value
 
+        def split_nuke_path(value):
+            if not value:
+                return []
+            if ";" in value and re.search(r"(?:^|;)[A-Za-z]:[\\\\/]", value):
+                return [path for path in value.split(";") if path]
+            return [path for path in value.split(os.pathsep) if path]
+
         nuke_binary = {nuke_binary!r}
         extra_args = {extra_args!r}
         nuke_path = ";".join(
             convert_path(path)
-            for path in os.environ.get("NUKE_PATH", "").split(os.pathsep)
-            if path
+            for path in split_nuke_path(os.environ.get("NUKE_PATH", ""))
         )
 
-        command = 'start "" ' + subprocess.list2cmdline(
+        command = "call " + subprocess.list2cmdline(
             [convert_path(nuke_binary)] + list(extra_args)
         )
         if nuke_path:

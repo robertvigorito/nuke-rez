@@ -40,6 +40,12 @@ def _wsl_launch_command(nuke_binary, extra_args=""):
             except (OSError, subprocess.CalledProcessError):
                 return path
 
+        def escape_cmd_value(value):
+            value = value.replace("^", "^^").replace("%", "%%")
+            for character in "&|<>()":
+                value = value.replace(character, "^" + character)
+            return value
+
         nuke_binary = {nuke_binary!r}
         extra_args = {extra_args!r}
         nuke_path = ";".join(
@@ -52,7 +58,7 @@ def _wsl_launch_command(nuke_binary, extra_args=""):
         if extra_args:
             command = command + " " + extra_args
         if nuke_path:
-            command = 'set "NUKE_PATH=' + nuke_path + '" && ' + command
+            command = 'set "NUKE_PATH=' + escape_cmd_value(nuke_path) + '" && ' + command
 
         sys.exit(subprocess.call(["cmd.exe", "/C", command]))
         """

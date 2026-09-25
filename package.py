@@ -26,7 +26,7 @@ def _is_wsl():
         return False
 
 
-def _wsl_launch_command(nuke_binary, extra_args=""):
+def _wsl_launch_command(nuke_binary, extra_args=()):
     """Build a WSL-safe launcher that converts NUKE_PATH for cmd.exe."""
     launcher = textwrap.dedent(
         """
@@ -54,9 +54,9 @@ def _wsl_launch_command(nuke_binary, extra_args=""):
             if path
         )
 
-        command = 'call "' + convert_path(nuke_binary) + '"'
+        command = "call " + subprocess.list2cmdline([convert_path(nuke_binary)])
         if extra_args:
-            command = command + " " + extra_args
+            command = command + " " + subprocess.list2cmdline(list(extra_args))
         if nuke_path:
             command = 'set "NUKE_PATH=' + escape_cmd_value(nuke_path) + '" && ' + command
 
@@ -80,8 +80,8 @@ def commands():
 
     if _is_wsl():
         alias("nuke", _wsl_launch_command(nuke_binary))
-        alias("nukex", _wsl_launch_command(nuke_binary, "--nukex"))
-        alias("nukei", _wsl_launch_command(nuke_binary, "--nukei"))
+        alias("nukex", _wsl_launch_command(nuke_binary, ("--nukex",)))
+        alias("nukei", _wsl_launch_command(nuke_binary, ("--nukei",)))
     else:
         alias("nuke", nuke_binary)
         alias("nukex", f"{nuke_binary} --nukex")

@@ -54,14 +54,13 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
             if path
         )
 
-        command = "call " + subprocess.list2cmdline([convert_path(nuke_binary)])
-        if extra_args:
-            command = command + " " + subprocess.list2cmdline(list(extra_args))
+        command = 'start "" ' + subprocess.list2cmdline(
+            [convert_path(nuke_binary)] + list(extra_args)
+        )
         if nuke_path:
             command = 'set "NUKE_PATH=' + escape_cmd_value(nuke_path) + '" && ' + command
 
-        subprocess.Popen(["cmd.exe", "/C", command])
-        sys.exit(0)
+        sys.exit(subprocess.run(["cmd.exe", "/C", command]).returncode)
         """
     ).format(nuke_binary=nuke_binary, extra_args=extra_args)
 

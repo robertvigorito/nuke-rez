@@ -111,31 +111,29 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
             printf '%s' "$1"
         }}
 
-        split_nuke_path "${{NUKE_PATH:-}}"
-        converted_nuke_path=""
-        for path_entry in "${{SPLIT_NUKE_PATH_RESULT[@]}}"; do
-            [[ -z "$path_entry" ]] && continue
-            converted_entry=$(convert_path "$path_entry")
-            if [[ -n "$converted_nuke_path" ]]; then
-                converted_nuke_path="$converted_nuke_path;$converted_entry"
-            else
-                converted_nuke_path=$converted_entry
-            fi
-        done
+        convert_nuke_path() {{
+            split_nuke_path "${{NUKE_PATH:-}}"
+            local converted_path=""
+            local converted_entry
+            for path_entry in "${{SPLIT_NUKE_PATH_RESULT[@]}}"; do
+                [[ -z "$path_entry" ]] && continue
+                converted_entry=$(convert_path "$path_entry")
+                converted_path="${{converted_path:+$converted_path;}}$converted_entry"
+            done
+            printf '%s' "$converted_path"
+        }}
 
-        command=$(quote_cmd_arg "$(convert_path "$nuke_binary")")
-        for extra_arg in "${{extra_args[@]}}"; do
-            command="$command $(quote_cmd_arg "$extra_arg")"
-        done
-        for cli_arg in "$@"; do
-            command="$command $(quote_cmd_arg "$(convert_argument "$cli_arg")")"
-        done
+        run_nuke() {{
+            local command converted_nuke_path
+            converted_nuke_path=$(convert_nuke_path)
+            command=$(quote_cmd_arg "$(convert_path "$nuke_binary")")
+            for extra_arg in "${{extra_args[@]}}"; do command="$command $(quote_cmd_arg "$extra_arg")"; done
+            for cli_arg in "$@"; do command="$command $(quote_cmd_arg "$(convert_argument "$cli_arg")")"; done
+            [[ -n "$converted_nuke_path" ]] && command='set "NUKE_PATH='"$(escape_cmd_value "$converted_nuke_path")"'" && '"$command"
+            cmd.exe /C "$command"
+        }}
 
-        if [[ -n "$converted_nuke_path" ]]; then
-            command='set "NUKE_PATH='"$(escape_cmd_value "$converted_nuke_path")"'" && '"$command"
-        fi
-
-        cmd.exe /C "$command"
+        run_nuke "$@"
         """
     ).format(
         nuke_binary=shlex.quote(nuke_binary),

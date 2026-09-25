@@ -57,6 +57,14 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
         def convert_argument(argument):
             if os.path.exists(argument):
                 return convert_path(argument)
+            if "=" in argument:
+                option, value = argument.split("=", 1)
+                if os.path.exists(value):
+                    return option + "=" + convert_path(value)
+            if ":" in argument:
+                path_part, suffix = argument.rsplit(":", 1)
+                if suffix.isdigit() and os.path.exists(path_part):
+                    return convert_path(path_part) + ":" + suffix
             return argument
 
         nuke_binary = {nuke_binary!r}

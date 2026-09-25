@@ -61,7 +61,9 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
             for path in split_nuke_path(os.environ.get("NUKE_PATH", ""))
         )
 
-        command = subprocess.list2cmdline([convert_path(nuke_binary)] + list(extra_args))
+        command = subprocess.list2cmdline(
+            [convert_path(nuke_binary)] + list(extra_args) + sys.argv[1:]
+        )
         if nuke_path:
             command = 'set "NUKE_PATH=' + escape_cmd_value(nuke_path) + '" && ' + command
 

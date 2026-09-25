@@ -27,66 +27,122 @@ def _is_wsl():
 
 
 def _wsl_launch_command(nuke_binary, extra_args=()):
-    """Build a WSL-safe launcher that converts NUKE_PATH for cmd.exe."""
+    """Build a WSL-safe launcher that converts paths with shell wslpath."""
+    extra_args_definition = "extra_args=({})".format(
+        " ".join(shlex.quote(arg) for arg in extra_args)
+    )
     launcher = textwrap.dedent(
         """
-        import os
-        import re
-        import subprocess
-        import sys
+        nuke_binary={nuke_binary}
+        {extra_args_definition}
 
-        def convert_path(path):
-            try:
-                return subprocess.check_output(["wslpath", "-w", path], text=True).strip()
-            except (OSError, subprocess.CalledProcessError):
-                return path
+        convert_path() {{
+            case "$1" in
+                [A-Za-z]:[\\\\/]*)
+                    printf '%s' "$1"
+                    ;;
+                *)
+                    wslpath -w "$1" 2>/dev/null || printf '%s' "$1"
+                    ;;
+            esac
+        }}
 
-        def escape_cmd_value(value):
-            value = value.replace("^", "^^").replace("%", "%%")
-            for character in "&|<>()":
-                value = value.replace(character, "^" + character)
-            return value
+        escape_cmd_value() {{
+            local value=$1
+            value=${{value//^/^^}}
+            value=${{value//%/%%}}
+            value=${{value//&/^&}}
+            value=${{value//|/^|}}
+            value=${{value//</^<}}
+            value=${{value//>/^>}}
+            value=${{value//(/^(}}
+            value=${{value//)/^)}}
+            printf '%s' "$value"
+        }}
 
-        def split_nuke_path(value):
-            if not value:
-                return []
-            if ";" in value and re.search(r"(?:^|;)[A-Za-z]:[\\\\/]", value):
-                return [path for path in value.split(";") if path]
-            return [path for path in value.split(os.pathsep) if path]
+        quote_cmd_arg() {{
+            local value=$1
+            value=${{value//%/%%}}
+            printf '"%s"' "$value"
+        }}
 
-        def convert_argument(argument):
-            if os.path.exists(argument):
-                return convert_path(argument)
-            if "=" in argument:
-                option, value = argument.split("=", 1)
-                if os.path.exists(value):
-                    return option + "=" + convert_path(value)
-            if ":" in argument:
-                path_part, suffix = argument.rsplit(":", 1)
-                if suffix.isdigit() and os.path.exists(path_part):
-                    return convert_path(path_part) + ":" + suffix
-            return argument
+        split_nuke_path() {{
+            if [[ -z "$1" ]]; then
+                return
+            fi
 
-        nuke_binary = {nuke_binary!r}
-        extra_args = {extra_args!r}
-        nuke_path = ";".join(
-            convert_path(path)
-            for path in split_nuke_path(os.environ.get("NUKE_PATH", ""))
-        )
+            if [[ "$1" == *";"* && "$1" =~ (^|;)[A-Za-z]:[\\\\/] ]]; then
+                local old_ifs=$IFS
+                IFS=';'
+                read -r -a SPLIT_NUKE_PATH_RESULT <<< "$1"
+                IFS=$old_ifs
+            else
+                local old_ifs=$IFS
+                IFS=':'
+                read -r -a SPLIT_NUKE_PATH_RESULT <<< "$1"
+                IFS=$old_ifs
+            fi
+        }}
 
-        command = subprocess.list2cmdline(
-            [convert_path(nuke_binary)]
-            + list(extra_args)
-            + [convert_argument(argument) for argument in sys.argv[1:]]
-        )
-        if nuke_path:
-            command = 'set "NUKE_PATH=' + escape_cmd_value(nuke_path) + '" && ' + command
+        convert_argument() {{
+            if [[ -e "$1" ]]; then
+                convert_path "$1"
+                return
+            fi
 
-        sys.exit(subprocess.run(["cmd.exe", "/C", command]).returncode)
+            if [[ "$1" == *=* ]]; then
+                local option=${{1%%=*}}
+                local value=${{1#*=}}
+                if [[ -e "$value" ]]; then
+                    printf '%s=%s' "$option" "$(convert_path "$value")"
+                    return
+                fi
+            fi
+
+            if [[ "$1" == *:* ]]; then
+                local path_part=${{1%:*}}
+                local suffix=${{1##*:}}
+                if [[ "$suffix" =~ ^[0-9]+$ && -e "$path_part" ]]; then
+                    printf '%s:%s' "$(convert_path "$path_part")" "$suffix"
+                    return
+                fi
+            fi
+
+            printf '%s' "$1"
+        }}
+
+        split_nuke_path "${{NUKE_PATH:-}}"
+        converted_nuke_path=""
+        for path_entry in "${{SPLIT_NUKE_PATH_RESULT[@]}}"; do
+            [[ -z "$path_entry" ]] && continue
+            converted_entry=$(convert_path "$path_entry")
+            if [[ -n "$converted_nuke_path" ]]; then
+                converted_nuke_path="$converted_nuke_path;$converted_entry"
+            else
+                converted_nuke_path=$converted_entry
+            fi
+        done
+
+        command=$(quote_cmd_arg "$(convert_path "$nuke_binary")")
+        for extra_arg in "${{extra_args[@]}}"; do
+            command="$command $(quote_cmd_arg "$extra_arg")"
+        done
+        for cli_arg in "$@"; do
+            command="$command $(quote_cmd_arg "$(convert_argument "$cli_arg")")"
+        done
+
+        if [[ -n "$converted_nuke_path" ]]; then
+            command='set "NUKE_PATH='"$(escape_cmd_value "$converted_nuke_path")"'" && '"$command"
+        fi
+
+        cmd.exe /C "$command"
         """
-    ).format(nuke_binary=nuke_binary, extra_args=extra_args)
+    ).format(
+        nuke_binary=shlex.quote(nuke_binary),
+        extra_args_definition=extra_args_definition,
+    )
 
-    return "python -c {}".format(shlex.quote(launcher))
+    return "bash -lc {} --".format(shlex.quote(launcher))
 
 
 def commands():

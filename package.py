@@ -54,6 +54,11 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
                 return [path for path in value.split(";") if path]
             return [path for path in value.split(os.pathsep) if path]
 
+        def convert_argument(argument):
+            if os.path.exists(argument):
+                return convert_path(argument)
+            return argument
+
         nuke_binary = {nuke_binary!r}
         extra_args = {extra_args!r}
         nuke_path = ";".join(
@@ -62,7 +67,9 @@ def _wsl_launch_command(nuke_binary, extra_args=()):
         )
 
         command = subprocess.list2cmdline(
-            [convert_path(nuke_binary)] + list(extra_args) + sys.argv[1:]
+            [convert_path(nuke_binary)]
+            + list(extra_args)
+            + [convert_argument(argument) for argument in sys.argv[1:]]
         )
         if nuke_path:
             command = 'set "NUKE_PATH=' + escape_cmd_value(nuke_path) + '" && ' + command

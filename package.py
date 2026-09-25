@@ -44,7 +44,7 @@ def _wsl_launch_command(nuke_binary, extra_args=""):
         extra_args = {extra_args!r}
         nuke_path = ";".join(
             convert_path(path)
-            for path in os.environ.get("NUKE_PATH", "").split(":")
+            for path in os.environ.get("NUKE_PATH", "").split(os.pathsep)
             if path
         )
 

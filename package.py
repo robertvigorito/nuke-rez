@@ -16,12 +16,15 @@ def commands():
     Returns:
         The fucntion does not return anything, it modifies the environment in place.
     """
+    import os
     slim_version = "17.0"
-    NUKE_ROOT = f"/vfx/wgid/programs/Nuke{version}"
-
-    # Convenience aliases
-    alias("nuke", f"{NUKE_ROOT}/Nuke{slim_version}.exe")
-    alias("nukex", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukex")
-    alias("nukei", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukei")
-    # Nukestudio alias could be added here if needed in the future
-    alias("nukestudio", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukestudio")
+    NUKE_ROOT = f"E:/wgid/bin/windows/Nuke{slim_version}.lnk"
+    nuke_binary = f"{NUKE_ROOT}/Nuke{slim_version}.exe"
+    if os.environ.get("WSL_DISTRO_NAME"):
+        alias("nuke", f"wsl-command  '{NUKE_ROOT}'")
+        alias("nukex", f"wsl-command  '{NUKE_ROOT}' --nukex")
+        alias("nukei", f"wsl-command  '{NUKE_ROOT}' --nukei")
+    else:
+        alias("nuke", nuke_binary)
+        alias("nukex", f"{nuke_binary} --nukex")
+        alias("nukei", f"{nuke_binary} --nukei")

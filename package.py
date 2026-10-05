@@ -5,7 +5,6 @@ version = "15.1v1"
 authors = ["Foundry"]
 description = "Foundry Nuke compositing application"
 
-# requires = ["python-3.9"]
 
 build_command = False  # No build step
 
@@ -16,10 +15,16 @@ def commands():
     Returns:
         The fucntion does not return anything, it modifies the environment in place.
     """
-    slim_version = "15.1"
-    NUKE_ROOT = f"/vfx/wgid/programs/Nuke{version}"
+    import os
 
-    # Convenience aliases
-    alias("nuke", f"{NUKE_ROOT}/Nuke{slim_version}.exe")
-    alias("nukex", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukex")
-    alias("nukei", f"{NUKE_ROOT}/Nuke{slim_version}.exe --nukei")
+    slim_version = "15.1v1"
+    NUKE_ROOT = f"E:/wgid/bin/windows/Nuke{version}.lnk"
+    nuke_binary = f"{NUKE_ROOT}/Nuke{slim_version}.exe"
+    if os.environ.get("WSL_DISTRO_NAME"):
+        alias("nuke", f"wsl-command  '{NUKE_ROOT}'")
+        alias("nukex", f"wsl-command  '{NUKE_ROOT}' --nukex")
+        alias("nukei", f"wsl-command  '{NUKE_ROOT}' --nukei")
+    else:
+        alias("nuke", nuke_binary)
+        alias("nukex", f"{nuke_binary} --nukex")
+        alias("nukei", f"{nuke_binary} --nukei")

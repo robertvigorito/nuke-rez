@@ -1,7 +1,7 @@
 """The Nuke rez package, nothing special, just a wrapper around settings the environment to use Nuke in Rez."""
 
 name = "nuke"
-version = "17.0v1"
+version = "17.1v3"
 authors = ["Foundry"]
 description = "Foundry Nuke compositing application"
 
@@ -16,15 +16,13 @@ def commands():
     Returns:
         The fucntion does not return anything, it modifies the environment in place.
     """
-    import os
-    slim_version = "17.0"
-    NUKE_ROOT = f"E:/wgid/bin/windows/Nuke{slim_version}.lnk"
-    nuke_binary = f"{NUKE_ROOT}/Nuke{slim_version}.exe"
-    if os.environ.get("WSL_DISTRO_NAME"):
-        alias("nuke", f"wsl-command  '{NUKE_ROOT}'")
-        alias("nukex", f"wsl-command  '{NUKE_ROOT}' --nukex")
-        alias("nukei", f"wsl-command  '{NUKE_ROOT}' --nukei")
-    else:
-        alias("nuke", nuke_binary)
-        alias("nukex", f"{nuke_binary} --nukex")
-        alias("nukei", f"{nuke_binary} --nukei")
+
+    # Set the passover for WSL environment variables when loading nuke environment
+    env.WSLENV.append("PYTHONPATH/lpw:NUKE_PATH/lpw")
+
+    slim_version = "17.1"
+    nuke_executable = f"/vfx/wgid/programs/Nuke{version}/Nuke{slim_version}.exe"
+
+    alias("nuke", f"{nuke_executable} --nukex")
+    alias("nukestudio", f"{nuke_executable} --nc --studio")
+    alias("nukex", f"{nuke_executable} --nukex")
